@@ -1,5 +1,6 @@
 $ExcelObj = New-Object -comobject Excel.Application;
-$ExcelWorkbook = $ExcelObj.Workbooks.Open("C:\Users\sherbova_as\robot\test.xlsx");
+$ExcelPath=$args[0][0];
+$ExcelWorkbook = $ExcelObj.Workbooks.Open($ExcelPath);
 $ExcelObj.visible=$true;
 $ExcelWorkSheet = $ExcelWorkbook.Sheets.Item(1);
 $b = $args[0][1];

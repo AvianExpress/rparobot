@@ -2,6 +2,8 @@ const puppeteer = require('puppeteer');
 const fs=require('fs');
 const xlsx=require('xlsx');
 const clipboardy=require('clipboardy');
+const args = process.argv.slice(2)
+
 
 
 (async () =>{
@@ -15,6 +17,7 @@ while (vb.SheetNames[listCounter] != undefined){
   let str = vb.SheetNames[listCounter].toLowerCase();
   if ( str.indexOf('втормет')!=-1){
       console.log('Таки втормет ' + listCounter );
+      console.log(args[0]);
 
 
 let vs = vb.Sheets[vb.SheetNames[listCounter]];

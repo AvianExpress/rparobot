@@ -2,19 +2,26 @@ const puppeteer = require('puppeteer');
 const fs=require('fs');
 const xlsx=require('xlsx');
 const clipboardy=require('clipboardy');
+const args = process.argv.slice(2);
+const pathToEx=args[0];
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
-
-async function sleep(time){
-  const prm = new Promise((res,rej)=>setTimeout(()=>{ res()},time));
-  await prm;
-}
+// let  access = fs.createWriteStream(dir + '/node.access.log', { flags: 'a' })
+//       , error = fs.createWriteStream(dir + '/node.error.log', { flags: 'a' });
+const util = require('util');
+let  timeInMs = Date.now()
+let log_file = fs.createWriteStream(__dirname + '/debug.log' + timeInMs, {flags : 'w'});
+let log_stdout = process.stdout;
+console.log = function(d) { //
+  log_file.write(util.format(d) + '\n');
+  log_stdout.write(util.format(d) + '\n');
+};
 
 (async () =>{
 
   //Объявляем две функции-одна будет красить в красный уже отсутствующие, другая добавлять и красить в зелёный
-  function paintRed(column, row,){
+  function paintRed(path, column, row,){
     var spawn = require("child_process").spawn,child;
-     let str = ["AHAHAH", column, row, 1234];
+     let str = [path, column, row, 1234];
      child = spawn("powershell.exe",["C:\\Users\\sherbova_as\\robot\\excel2.ps1", str]);
      //child.stdin.write();
      child.stdout.on("data",function(data){
@@ -29,9 +36,9 @@ async function sleep(time){
      });
      child.stdin.end();
     }
-  function addVagon(column, row, vagonNumber){
+  function addVagon(path,column, row, vagonNumber){
         var spawn = require("child_process").spawn,child;
-         let str = ["AHAHAH", column, row, vagonNumber];
+         let str = [path, column, row, vagonNumber];
          child = spawn("powershell.exe",["C:\\Users\\sherbova_as\\robot\\excel.ps1", str]);
          //child.stdin.write();
          child.stdout.on("data",function(data){
@@ -119,7 +126,7 @@ for (i=0; i<range.e.r; i++){
             devtools: true
         });
         const page=await browser.newPage();
-        
+        //Функция для того, чтобы пробовать ещё раз, без перезагрузки
         const retry = (fn, ms)=> new Promise (resolve => {
             fn()
                 .then(resolve)
@@ -130,6 +137,7 @@ for (i=0; i<range.e.r; i++){
                     }, ms);
                 })
             });
+        //Тоже ретрай, но с перезагрузкой
         const retryHard = (fn, ms)=> new Promise (resolve => {
         fn()
             .then(resolve)
@@ -147,46 +155,38 @@ for (i=0; i<range.e.r; i++){
         });
         await page.setDefaultNavigationTimeout(0);
         //__________________________________
+        //Блок снятия данных с ЭТРАН-а
     
     
-    
-    // await sleep(3);
-    console.log(`await retryHard(() => page.goto('http://10.248.35.9:8092/WebShell/',{timeout:10000}), 10000);`)
+    //Идём на главную
     await retryHard(() => page.goto('http://10.248.35.9:8092/WebShell/',{timeout:10000}), 10000);
-    console.log(`await page.waitForTimeout(2000);`)
     await page.waitForTimeout(2000);
-    console.log(`await retryHard(()=> page.waitForSelector('.dialog-auth-user-name',{timeout:5000}), 5000); `)
+    //Ждём пока подгрузится и логинимся
     await retryHard(()=> page.waitForSelector('.dialog-auth-user-name',{timeout:5000}), 5000); 
-    console.log(`await page.type('.dialog-auth-user-name', 'Осина_ЮВ');`)
     await page.type('.dialog-auth-user-name', 'Осина_ЮВ');
-    console.log(`await page.type('.dialog-auth-user-password', 'Etran222');`)
     await page.type('.dialog-auth-user-password', 'Etran222');
-    console.log(` await page.click('.button'); `)
     await page.click('.button'); 
-    console.log(`await page.waitForSelector(':nth-child(16) > .shell-menu-item-img',{timeout:0});`)
-    await page.waitForSelector(':nth-child(16) > .shell-menu-item-img',{timeout:0});
-    console.log(`await retryHard(() => page.goto('http://10.248.35.9:8092/WebShell/%D0%97%D0%B0%D1%8F%D0%B2%D0%BA%D0%B0_%D0%BD%D0%B0_%D0%B3%D1%80%D1%83%D0%B7%D0%BE%D0%BF%D0%B5%D1%80%D0%B5%D0%B2%D0%BE%D0%B7%D0%BA%D1%83',{timeout:5000}), 5000);`)
+    //Идём в ГУ-шки
+    await retryHard(() => page.waitForSelector(':nth-child(16) > .shell-menu-item-img',{timeout:5000}), 5000);
+
     await retryHard(() => page.goto('http://10.248.35.9:8092/WebShell/%D0%97%D0%B0%D1%8F%D0%B2%D0%BA%D0%B0_%D0%BD%D0%B0_%D0%B3%D1%80%D1%83%D0%B7%D0%BE%D0%BF%D0%B5%D1%80%D0%B5%D0%B2%D0%BE%D0%B7%D0%BA%D1%83',{timeout:5000}), 5000);
-    console.log(`await page.waitForTimeout(4000);`)
     await page.waitForTimeout(4000);
-    console.log(`await retryHard(() => page.waitForSelector('.js-button-find-document',{timeout:10000}), 10000);`)
+    //Ждём пока подгрузится форма поиска
     await retryHard(() => page.waitForSelector('.js-button-find-document',{timeout:10000}), 10000);
-    console.log(`await page.click('.js-button-find-document');`)
     await page.click('.js-button-find-document');
-    console.log(` await page.click(':nth-child(2) > .doc-search-dialog__radio-caption');`)
     await page.click(':nth-child(2) > .doc-search-dialog__radio-caption');
-    console.log(`await page.keyboard.down('Control',{delay: 250});`)
-    await page.keyboard.down('Control',{delay: 250});
-    console.log(`await page.keyboard.down('V');`)
-    await page.keyboard.down('V');
-    console.log(`await page.waitForSelector('.dialog__body > .dialog-data > .doc-search-dialog__container > .doc-search-dialog__buttons > .button:nth-child(1)');`)
+    //Из буфера обмена вкидываем номер ГУ
+    //!!!ВАЖНО!!! в буфере не должно быть левых данных, иначе магия не удастся
+    await page.keyboard.down('Control');
+    await page.keyboard.press('V');
+    await page.keyboard.up('Control');
+    //И ждём, пока не появится кнопка поиска
     await page.waitForSelector('.dialog__body > .dialog-data > .doc-search-dialog__container > .doc-search-dialog__buttons > .button:nth-child(1)');
-    console.log(`await page.click('.dialog__body > .dialog-data > .doc-search-dialog__container > .doc-search-dialog__buttons > .button:nth-child(1)');`)
     await page.click('.dialog__body > .dialog-data > .doc-search-dialog__container > .doc-search-dialog__buttons > .button:nth-child(1)');
-   
     let num
+    //Здесь мы кликаем получаем количество итераций и кликаем по последней
     try{
-    await page.waitForSelector('.ui-grid-summary-page > .ui-grid-row > .first-cell > .cell-content',{timeout:5000});
+    await page.waitForSelector('.ui-grid-summary-page > .ui-grid-row > .first-cell',{timeout:5000});
     num = await page.$eval('.ui-grid-summary-page > .ui-grid-row > .first-cell > .cell-content', ele => ele.textContent);
     }
     catch (e)
@@ -197,62 +197,43 @@ for (i=0; i<range.e.r; i++){
     
     console.log(num);
     if (num!=undefined){
-    num1=Number(num);
-    num1 +=2;
-    // num1++;
-    // num1++;
+    num1=num;
+    num1=num1+2;
     console.log(num1);
     try{
-    await page.waitForSelector(':nth-child('+ num1 +') > .first-cell > .cell-content',{timeout:500});
-    await sleep(300);
+      //Если он будет выделываться и не кликать в таблицу-раскомментить две нижние строчки, а те, что под ними, закомментить
+    // await page.WaitForSelector(':nth-child('+ num1 +') > .first-cell');
+    // await page.click(':nth-child('+ num1 +') > .first-cell', {clickCount: 2 });
+    await page.waitForSelector(':nth-child('+ num1 +') > .first-cell > .cell-content',{timeout:0});
     await page.click(':nth-child('+ num1 +') > .first-cell > .cell-content', {clickCount: 2 });
     }
     catch (e){
       console.log('С этой ГУ что-то не так, у неё нету версий. Согласована с первого раза?');
     }
     finally{
-   console.log(`await page.waitForSelector('.xm-object > .nav > .xm-tabsheet-caption:nth-child(10) > .nav-link > .xm-tabsheet-caption-text',{timeout:0});`)
-      await page.waitForSelector('.xm-object > .nav > .xm-tabsheet-caption:nth-child(10) > .nav-link > .xm-tabsheet-caption-text',{timeout:0});
-   console.log(`await page.click('.xm-object > .nav > .xm-tabsheet-caption:nth-child(10) > .nav-link > .xm-tabsheet-caption-text', {timeout: 0});`)
+      //Здесь уже работа с самим документом, идём в накладные и проходимся по вагонам
+    await page.waitForSelector('.xm-object > .nav > .xm-tabsheet-caption:nth-child(10) > .nav-link > .xm-tabsheet-caption-text',{timeout:0});
     await page.click('.xm-object > .nav > .xm-tabsheet-caption:nth-child(10) > .nav-link > .xm-tabsheet-caption-text', {timeout: 0});
-   console.log(`await page.waitForTimeout(1000);`);
-
-   process.exit(1);
-
     await page.waitForTimeout(1000);
-   console.log(`await page.waitForSelector('.xm-container-data > :nth-child(5) > .btn-caption');`)
     await page.waitForSelector('.xm-container-data > :nth-child(5) > .btn-caption');
-   console.log(`await page.click('.xm-container-data > :nth-child(5) > .btn-caption');`)
     await page.click('.xm-container-data > :nth-child(5) > .btn-caption');
-   console.log(`await page.waitForSelector('.xm-object:nth-child(1) > .xm-container-data:nth-child(2) > .xm-grid-container-wrapper:nth-child(1) > .xm-grid-container:nth-child(2) > .ui-grid:nth-child(2) > .ui-grid-content:nth-child(6) > .ui-grid-body:nth-child(3) .ui-grid-row:nth-child(3) > .ui-grid-cell:nth-child(4) > .cell-content:nth-child(1)',{timeout:0});`)
     await page.waitForSelector('.xm-object:nth-child(1) > .xm-container-data:nth-child(2) > .xm-grid-container-wrapper:nth-child(1) > .xm-grid-container:nth-child(2) > .ui-grid:nth-child(2) > .ui-grid-content:nth-child(6) > .ui-grid-body:nth-child(3) .ui-grid-row:nth-child(3) > .ui-grid-cell:nth-child(4) > .cell-content:nth-child(1)',{timeout:0});
-   console.log(`await page.click('.xm-object:nth-child(1) > .xm-container-data:nth-child(2) > .xm-grid-container-wrapper:nth-child(1) > .xm-grid-container:nth-child(2) > .ui-grid:nth-child(2) > .ui-grid-content:nth-child(6) > .ui-grid-body:nth-child(3) .ui-grid-row:nth-child(3) > .ui-grid-cell:nth-child(4) > .cell-content:nth-child(1)');`)
     await page.click('.xm-object:nth-child(1) > .xm-container-data:nth-child(2) > .xm-grid-container-wrapper:nth-child(1) > .xm-grid-container:nth-child(2) > .ui-grid:nth-child(2) > .ui-grid-content:nth-child(6) > .ui-grid-body:nth-child(3) .ui-grid-row:nth-child(3) > .ui-grid-cell:nth-child(4) > .cell-content:nth-child(1)');
-   console.log(`await page.keyboard.press('ArrowDown');`)
     await page.keyboard.press('ArrowDown');
-   console.log(`await page.keyboard.press('ArrowUp');`)
     await page.keyboard.press('ArrowUp');
-   console.log(`await page.keyboard.down('Control');`)
     await page.keyboard.down('Control');
-   console.log(`await page.keyboard.press('C');`)
     await page.keyboard.press('C');
-   console.log(`await page.keyboard.up('Control');`)
     await page.keyboard.up('Control');
     for (z=0; mockup[z-1]!=clipboardy.readSync(); z++){
     mockup.push(clipboardy.readSync());
-    console.log(`await page.keyboard.press('ArrowDown');`);
     await page.keyboard.press('ArrowDown');
-    console.log(`await page.keyboard.down('Control');`);
     await page.keyboard.down('Control');
-    console.log(`await page.keyboard.press('C');`);
     await page.keyboard.press('C');
-    console.log(`await page.keyboard.up('Control');`);
     await page.keyboard.up('Control');
     }
   }
-  }
+  
     await page.waitForTimeout(1000);
-    console.log(`await page.waitForTimeout(1000);`);
     browser.close();
     eq=false;
     equ=[];
@@ -266,6 +247,8 @@ for (i=0; i<range.e.r; i++){
 
 
 //___________________________________________________________________
+//Блок работы с экселем
+//Пока у нас вагоны не начались, мы скипаем
         while(!Sheet1Vagon)
         {
           i++
@@ -276,18 +259,23 @@ for (i=0; i<range.e.r; i++){
         console.log('Первый вагон ' + Sheet1Vagon.v);
         console.log('На строке '+ i);
         console.log('Столбец '+ cell_ref_Ncarr.c);
+        //Когда вагон найден, мы его обрабатываем
         while (Sheet1Vagon){
           console.log('Под эту вот ГУ вагон с номером '+ Sheet1Vagon.v);
           for (j=0; j<mockup.length; j++){
+            //Мы сравниваем полученный из ЭТРАН-а массив с вагоном, и если его в массиве нету-его не должно быть и в ГУ
+            //Одновременно, если такой вагон есть, его индекс мы запишем в другой массив, который обозначает те вагоны,
+            //Которые есть и которые добавлять не надо
             if (mockup[j]==Sheet1Vagon.v){
               eq=true;
               equ.push(j);
             }
           }
           if (eq==false){ 
+            //Блок закрашивания ненужных вагонов в красный
              console.log(cell_ref_Ncarr.c+1+count);
              console.log(cell_ref_Ncarr.r+1+count);
-             paintRed(cell_ref_Ncarr.c+1, i+1+count);
+             paintRed(pathToEx,cell_ref_Ncarr.c+1, i+1+count);
              await delay(5000);
              console.log('Данный вагон ' +Sheet1Vagon.v+' более не присутствует в ГУ. Нужно перекрасить его в красный цвет');
           }
@@ -301,6 +289,7 @@ for (i=0; i<range.e.r; i++){
         await delay(5000);
         let add=true;
         console.log(equ);
+        //В этом цикле мы смотрим индексы вагонов из ЭТРАН-а, которые НЕ нужно вставлять, и вставляем все остальные
         for (j=0; j<mockup.length; j++)
         {
           for (q=0; q<equ.length; q++){
@@ -308,12 +297,14 @@ for (i=0; i<range.e.r; i++){
               add=false;
             }
           }
-          if (add===true){
+          if (add===true)
+          //Блок вставки недостающего вагона
+          {
           console.log('Индекс из мокапа, который надо добавить '+ j);
           console.log('Элемент, который стоит добавить: '+ mockup[j])
           console.log(addressNСarriage.c);
           console.log(i);
-          addVagon(addressNСarriage.c+1, i+1+count, mockup[j]);
+          addVagon(pathToEx,addressNСarriage.c+1, i+1+count, mockup[j]);
           count++;
           await delay(5000);
           // paintSmth(addressNСarriage.c+1, i);
@@ -321,12 +312,15 @@ for (i=0; i<range.e.r; i++){
           }
           add=true;
         }
+      }
+        await browser.close();
         console.log(mockup);
         mockup=[];
         equ=[];
         i--;
         console.log(i);
       }
+        
      
     }
     
