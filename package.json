@@ -1,0 +1,27 @@
+{
+  "name": "robot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "chromium": "^3.0.2",
+    "clipboardy": "^2.3.0",
+    "edge": "^7.10.1",
+    "edge-ps": "^0.1.0-pre",
+    "excel4node": "^1.7.2",
+    "exceljs": "^4.2.1",
+    "extract-zip": "^1.7.0",
+    "fs": "^0.0.1-security",
+    "git": "^0.1.5",
+    "promise-retry": "^2.0.1",
+    "puppeteer": "^10.1.0",
+    "xlsx": "^0.17.0",
+    "xlsx-color": "^0.14.30",
+    "xlsx-style": "^0.8.13"
+  }
+}
