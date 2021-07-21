@@ -8,12 +8,18 @@ const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 // let  access = fs.createWriteStream(dir + '/node.access.log', { flags: 'a' })
 //       , error = fs.createWriteStream(dir + '/node.error.log', { flags: 'a' });
 const util = require('util');
-let  timeInMs = Date.now()
-let log_file = fs.createWriteStream(__dirname + '/debug.log' + timeInMs, {flags : 'w'});
+let start1= new Date();
+let logname = ('/debug'+ start1.getHours()+start1.getMinutes()+start1.getSeconds()+ '.log');
+let log_file = fs.createWriteStream(__dirname + logname, {flags : 'w'});
 let log_stdout = process.stdout;
-console.log = function(d) { //
-  log_file.write(util.format(d) + '\n');
-  log_stdout.write(util.format(d) + '\n');
+let log_filed = fs.createWriteStream(__dirname + '/debug'+ Date.now()+'.log', {flags : 'w'});
+console.log = function(d, param1=undefined) {
+  if (param1!=undefined){
+    start1=new Date();
+  param1.write('['+start1.getHours() +':'+start1.getMinutes()+':'+start1.getSeconds()+'] '+util.format(d) + '\n');
+  }
+  log_stdout.write('['+start1.getHours() +':'+start1.getMinutes()+':'+start1.getSeconds()+'] '+util.format(d) + '\n');
+ 
 };
 
 (async () =>{
@@ -25,14 +31,14 @@ console.log = function(d) { //
      child = spawn("powershell.exe",["C:\\Users\\sherbova_as\\robot\\excel2.ps1", str]);
      //child.stdin.write();
      child.stdout.on("data",function(data){
-         console.log("Powershell Data: " + data);
+         console.log("Powershell Data: " + data, log_file);
      });
      child.stderr.on("data",function(data){
-         console.log("Powershell Errors: " + data);
+         console.log("Powershell Errors: " + data, log_file);
      });
      child.on("exit",function(){
          console.log();
-         console.log("Powershell  Paint Script finished");
+         console.log("Powershell  Paint Script finished", log_file);
      });
      child.stdin.end();
     }
@@ -42,20 +48,19 @@ console.log = function(d) { //
          child = spawn("powershell.exe",["C:\\Users\\sherbova_as\\robot\\excel.ps1", str]);
          //child.stdin.write();
          child.stdout.on("data",function(data){
-             console.log("Powershell Data: " + data);
+             console.log("Powershell Data: " + data, log_file);
          });
          child.stderr.on("data",function(data){
-             console.log("Powershell Errors: " + data);
+             console.log("Powershell Errors: " + data, log_file);
          });
          child.on("exit",function(){
              console.log();
-             console.log("Powershell Add Script finished");
+             console.log("Powershell Add Script finished", log_file);
          });
          child.stdin.end();
         }
 
 let vb=xlsx.readFile("test.xlsx",{cellDates:true});
-//TODO: сделать выбор файла
 //У них разные имена книг!!!!!!!
 let listCounter=0;
 // let vs = vb.Sheets[vb.SheetNames[listCounter]];
@@ -63,7 +68,7 @@ while (vb.SheetNames[listCounter] != undefined){
   console.log(vb.SheetNames[listCounter]);
   let str = vb.SheetNames[listCounter].toLowerCase();
   if ( str.indexOf('втормет')!=-1){
-      console.log('Таки втормет ' + listCounter );
+      console.log(' Лист со вторметом найден: '  + listCounter , log_file);
 
 let count=0;    
 let vs = vb.Sheets[vb.SheetNames[listCounter]];
@@ -81,9 +86,11 @@ for (i=0; i < range.e.c+2;  i++){
     if (Sheet1C!=undefined){
     if (Sheet1C.v === "№ ГУ-12"){
         addressGU = address;
+        console.log('Колонка с номерами ГУ найдена: '+ cell_ref.c, log_file);
     }
     if (Sheet1C.v === "Номера вагонов"){
         addressNСarriage = address;
+        console.log('Колонка с номерами вагонов найдена: '+ cell_ref.c, log_file);
     }
   }
 }
@@ -114,7 +121,7 @@ for (i=0; i<range.e.r; i++){
     {
         clipboardy.writeSync('');
         clipboardy.writeSync(String(Sheet1Number.v));
-        console.log(clipboardy.readSync())
+        console.log('Номер ГУ найден: '+clipboardy.readSync(), log_file)
         //Получение данных с ЭТРАН-а
         //TODO: протестить и пофиксить последний этап, там что-то нехорошее
         const browser = await puppeteer.launch({
@@ -132,7 +139,7 @@ for (i=0; i<range.e.r; i++){
                 .then(resolve)
                 .catch(() => {
                     setTimeout(()=>{
-                        console.log('retrying...');
+                        console.log('retrying...', log_filed);
                         retry(fn, ms).then(resolve);
                     }, ms);
                 })
@@ -144,7 +151,7 @@ for (i=0; i<range.e.r; i++){
             .catch(() => {
                 setTimeout(()=>{
                     page.reload();
-                    console.log('retrying hard...');
+                    console.log('retrying hard...', log_filed);
                     retryHard(fn, ms).then(resolve);
                 }, ms);
             })
@@ -191,15 +198,15 @@ for (i=0; i<range.e.r; i++){
     }
     catch (e)
     {
-      console.log('Отсутствует ГУ');
+      console.log('ГУ с таким номером отсутствует в базе ЭТРАН', log_file);
       num=undefined;
     }
     
-    console.log(num);
+    console.log(num, log_filed);
     if (num!=undefined){
     num1=num;
     num1=num1+2;
-    console.log(num1);
+    console.log(num1, log_filed);
     try{
       //Если он будет выделываться и не кликать в таблицу-раскомментить две нижние строчки, а те, что под ними, закомментить
     // await page.WaitForSelector(':nth-child('+ num1 +') > .first-cell');
@@ -208,7 +215,7 @@ for (i=0; i<range.e.r; i++){
     await page.click(':nth-child('+ num1 +') > .first-cell > .cell-content', {clickCount: 2 });
     }
     catch (e){
-      console.log('С этой ГУ что-то не так, у неё нету версий. Согласована с первого раза?');
+      console.log('С этой ГУ что-то не так, у неё нету версий. Согласована с первого раза?', log_file);
     }
     finally{
       //Здесь уже работа с самим документом, идём в накладные и проходимся по вагонам
@@ -256,12 +263,12 @@ for (i=0; i<range.e.r; i++){
         cell_ref_NcarrD = xlsx.utils.encode_cell(cell_ref_Ncarr)
         Sheet1Vagon=vs[cell_ref_NcarrD];
         }       
-        console.log('Первый вагон ' + Sheet1Vagon.v);
-        console.log('На строке '+ i);
-        console.log('Столбец '+ cell_ref_Ncarr.c);
+        // console.log('Первый вагон ' + Sheet1Vagon.v);
+        // console.log('На строке '+ i);
+        // console.log('Столбец '+ cell_ref_Ncarr.c);
         //Когда вагон найден, мы его обрабатываем
         while (Sheet1Vagon){
-          console.log('Под эту вот ГУ вагон с номером '+ Sheet1Vagon.v);
+          console.log('Под эту ГУ в таблице записан вагон с номером '+ Sheet1Vagon.v, log_file);
           for (j=0; j<mockup.length; j++){
             //Мы сравниваем полученный из ЭТРАН-а массив с вагоном, и если его в массиве нету-его не должно быть и в ГУ
             //Одновременно, если такой вагон есть, его индекс мы запишем в другой массив, который обозначает те вагоны,
@@ -277,7 +284,7 @@ for (i=0; i<range.e.r; i++){
              console.log(cell_ref_Ncarr.r+1+count);
              paintRed(pathToEx,cell_ref_Ncarr.c+1, i+1+count);
              await delay(5000);
-             console.log('Данный вагон ' +Sheet1Vagon.v+' более не присутствует в ГУ. Нужно перекрасить его в красный цвет');
+             console.log('Данный вагон ' +Sheet1Vagon.v+' более не присутствует в ГУ', log_file);
           }
           eq=false;
           i++
@@ -300,10 +307,10 @@ for (i=0; i<range.e.r; i++){
           if (add===true)
           //Блок вставки недостающего вагона
           {
-          console.log('Индекс из мокапа, который надо добавить '+ j);
-          console.log('Элемент, который стоит добавить: '+ mockup[j])
+          console.log('Индекс из ЭТРАН-а, который надо добавить '+ j, log_filed);
+          console.log('Элемент из базы ЭТРАН-А на добавление: '+ mockup[j], log_file)
           console.log(addressNСarriage.c);
-          console.log(i);
+          console.log(i, log_filed);
           addVagon(pathToEx,addressNСarriage.c+1, i+1+count, mockup[j]);
           count++;
           await delay(5000);
@@ -314,11 +321,10 @@ for (i=0; i<range.e.r; i++){
         }
       }
         await browser.close();
-        console.log(mockup);
+        console.log(mockup, log_filed);
         mockup=[];
         equ=[];
         i--;
-        console.log(i);
       }
         
      
