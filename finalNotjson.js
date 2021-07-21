@@ -200,6 +200,7 @@ for (i=0; i<range.e.r; i++){
     {
       console.log('ГУ с таким номером отсутствует в базе ЭТРАН', log_file);
       num=undefined;
+      i++;
     }
     
     console.log(num, log_filed);
@@ -211,7 +212,7 @@ for (i=0; i<range.e.r; i++){
       //Если он будет выделываться и не кликать в таблицу-раскомментить две нижние строчки, а те, что под ними, закомментить
     // await page.WaitForSelector(':nth-child('+ num1 +') > .first-cell');
     // await page.click(':nth-child('+ num1 +') > .first-cell', {clickCount: 2 });
-    await page.waitForSelector(':nth-child('+ num1 +') > .first-cell > .cell-content',{timeout:0});
+    await page.waitForSelector(':nth-child('+ num1 +') > .first-cell',{timeout:0});
     await page.click(':nth-child('+ num1 +') > .first-cell > .cell-content', {clickCount: 2 });
     }
     catch (e){
